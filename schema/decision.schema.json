@@ -1,0 +1,149 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/clankie-bot/clankie-decision-log/schema/decision.schema.json",
+  "title": "Agent decision record",
+  "description": "One decision an agent made: what changed, why, the evidence, its limits and the approval. Format version 0.1.",
+  "type": "object",
+  "required": ["formatVersion", "id", "revision", "title", "status", "actor", "subject", "change", "rationale", "evidence", "limits", "createdAt", "updatedAt"],
+  "additionalProperties": false,
+  "properties": {
+    "formatVersion": { "const": "0.1" },
+    "id": { "type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$" },
+    "revision": {
+      "description": "Increments on every material edit. An approval applies to exactly one revision.",
+      "type": "integer",
+      "minimum": 1
+    },
+    "title": { "type": "string", "minLength": 1, "maxLength": 200 },
+    "status": { "enum": ["proposed", "approved", "rejected", "superseded", "withdrawn"] },
+    "actor": { "$ref": "#/$defs/party" },
+    "subject": {
+      "description": "What the decision is about. sourceRevision is the commit or content address the evidence and approval bind to.",
+      "type": "object",
+      "required": ["sourceRevision", "refs"],
+      "additionalProperties": false,
+      "properties": {
+        "sourceRevision": { "type": "string", "minLength": 1 },
+        "refs": { "type": "array", "items": { "$ref": "#/$defs/ref" } }
+      }
+    },
+    "change": {
+      "description": "What changed.",
+      "type": "object",
+      "required": ["summary"],
+      "additionalProperties": false,
+      "properties": {
+        "summary": { "type": "string", "minLength": 1 },
+        "details": { "type": "string" },
+        "paths": { "type": "array", "items": { "type": "string", "minLength": 1 } }
+      }
+    },
+    "rationale": {
+      "description": "Why this change, and what else was considered.",
+      "type": "object",
+      "required": ["why", "alternatives"],
+      "additionalProperties": false,
+      "properties": {
+        "why": { "type": "string", "minLength": 1 },
+        "alternatives": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["choice", "tradeoff"],
+            "additionalProperties": false,
+            "properties": {
+              "choice": { "type": "string", "minLength": 1 },
+              "tradeoff": { "type": "string", "minLength": 1 }
+            }
+          }
+        },
+        "intent": {
+          "description": "Where the requester's stated intent supports the choice.",
+          "type": "array",
+          "items": { "$ref": "#/$defs/ref" }
+        }
+      }
+    },
+    "evidence": { "type": "array", "items": { "$ref": "#/$defs/evidence" } },
+    "limits": {
+      "description": "What the evidence does not show, known issues, assumptions and scope.",
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["kind", "statement"],
+        "additionalProperties": false,
+        "properties": {
+          "kind": { "enum": ["untested", "known-issue", "assumption", "scope"] },
+          "statement": { "type": "string", "minLength": 1 }
+        }
+      }
+    },
+    "approval": { "$ref": "#/$defs/approval" },
+    "supersedes": { "type": "string", "minLength": 1 },
+    "supersededBy": { "type": "string", "minLength": 1 },
+    "createdAt": { "type": "string", "format": "date-time" },
+    "updatedAt": { "type": "string", "format": "date-time" }
+  },
+  "$defs": {
+    "party": {
+      "type": "object",
+      "required": ["kind", "id"],
+      "additionalProperties": false,
+      "properties": {
+        "kind": { "enum": ["agent", "human"] },
+        "id": { "type": "string", "minLength": 1 },
+        "name": { "type": "string" }
+      }
+    },
+    "ref": {
+      "type": "object",
+      "required": ["kind", "ref"],
+      "additionalProperties": false,
+      "properties": {
+        "kind": { "enum": ["issue", "change", "thread", "ask", "decision", "doc", "run", "other"] },
+        "ref": { "type": "string", "minLength": 1 },
+        "url": { "type": "string", "format": "uri" },
+        "quote": { "type": "string" }
+      }
+    },
+    "evidence": {
+      "type": "object",
+      "required": ["id", "kind", "uri", "summary", "sourceRevision", "provenance", "outcome", "capturedAt"],
+      "additionalProperties": false,
+      "properties": {
+        "id": { "type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$" },
+        "kind": { "enum": ["recording", "check", "screenshot", "log", "comparison", "other"] },
+        "uri": { "type": "string", "format": "uri" },
+        "summary": { "type": "string", "minLength": 1 },
+        "sourceRevision": {
+          "description": "Evidence holds only for the revision it was produced against.",
+          "type": "string",
+          "minLength": 1
+        },
+        "provenance": {
+          "description": "Fixtures and replays are labelled and never count as live proof.",
+          "enum": ["live", "fixture", "replay"]
+        },
+        "outcome": { "enum": ["pass", "fail", "inconclusive", "not-applicable"] },
+        "environment": {
+          "type": "object",
+          "additionalProperties": { "type": "string" }
+        },
+        "capturedAt": { "type": "string", "format": "date-time" }
+      }
+    },
+    "approval": {
+      "type": "object",
+      "required": ["verdict", "by", "at", "decisionRevision", "sourceRevision"],
+      "additionalProperties": false,
+      "properties": {
+        "verdict": { "enum": ["approved", "rejected"] },
+        "by": { "$ref": "#/$defs/party" },
+        "at": { "type": "string", "format": "date-time" },
+        "decisionRevision": { "type": "integer", "minimum": 1 },
+        "sourceRevision": { "type": "string", "minLength": 1 },
+        "note": { "type": "string" }
+      }
+    }
+  }
+}

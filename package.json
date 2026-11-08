@@ -1,0 +1,31 @@
+{
+  "name": "clankie-decision-log",
+  "version": "0.1.0",
+  "description": "An open format for agent decisions: what changed, why, the evidence, the limits and the approval.",
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/clankie-bot/clankie-decision-log.git"
+  },
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=24"
+  },
+  "exports": {
+    ".": "./src/index.ts",
+    "./schema.json": "./schema/decision.schema.json"
+  },
+  "bin": {
+    "decision-log": "./src/cli.ts"
+  },
+  "scripts": {
+    "test": "node --test test/*.test.ts",
+    "typecheck": "tsc -p tsconfig.json",
+    "render-examples": "node src/cli.ts render examples/approved-retry-backoff.json > examples/approved-retry-backoff.md"
+  },
+  "devDependencies": {
+    "@types/node": "^26.6.6",
+    "typescript": "^7.0.2"
+  }
+}

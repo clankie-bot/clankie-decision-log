@@ -1,0 +1,66 @@
+{
+  "formatVersion": "0.1",
+  "id": "dec-2026-11-07-retry-backoff",
+  "revision": 2,
+  "title": "Back off webhook retries exponentially",
+  "status": "approved",
+  "actor": { "kind": "agent", "id": "worker-7", "name": "Webhook worker" },
+  "subject": {
+    "sourceRevision": "3f9c2e1",
+    "refs": [
+      { "kind": "issue", "ref": "EX-42", "url": "https://example.com/issues/EX-42" },
+      { "kind": "change", "ref": "PR 118", "url": "https://example.com/pulls/118" }
+    ]
+  },
+  "change": {
+    "summary": "Webhook delivery retries now wait 1s, 2s, 4s up to 60s with jitter, instead of retrying every second.",
+    "paths": ["src/webhooks/retry.ts", "test/webhooks/retry.test.ts"]
+  },
+  "rationale": {
+    "why": "Fixed one-second retries hammered a recovering receiver and tripped its rate limit, which extended the outage.",
+    "intent": [
+      { "kind": "ask", "ref": "owner ask, Nov 7", "quote": "stop us from making their outage worse" }
+    ],
+    "alternatives": [
+      { "choice": "Keep fixed retries and cap attempts at 5", "tradeoff": "Simpler, but drops deliveries during any outage longer than five seconds." },
+      { "choice": "Queue failed deliveries for manual replay", "tradeoff": "No load on the receiver, but needs a person for every outage." }
+    ]
+  },
+  "evidence": [
+    {
+      "id": "unit",
+      "kind": "check",
+      "uri": "https://example.com/runs/981#unit",
+      "summary": "Retry schedule unit tests, 14 passed.",
+      "sourceRevision": "3f9c2e1",
+      "provenance": "live",
+      "outcome": "pass",
+      "capturedAt": "2026-11-07T20:41:00Z"
+    },
+    {
+      "id": "outage-replay",
+      "kind": "recording",
+      "uri": "https://example.com/evidence/outage-replay.mp4",
+      "summary": "Replayed last week's receiver outage: peak request rate fell from 60/min to 9/min.",
+      "sourceRevision": "3f9c2e1",
+      "provenance": "replay",
+      "outcome": "pass",
+      "environment": { "host": "sandbox-2" },
+      "capturedAt": "2026-11-07T20:55:00Z"
+    }
+  ],
+  "limits": [
+    { "kind": "untested", "statement": "Not exercised against a receiver that returns Retry-After headers." },
+    { "kind": "assumption", "statement": "Receivers tolerate up to 60 seconds of delivery delay." }
+  ],
+  "approval": {
+    "verdict": "approved",
+    "by": { "kind": "human", "id": "owner" },
+    "at": "2026-11-07T21:10:00Z",
+    "decisionRevision": 2,
+    "sourceRevision": "3f9c2e1",
+    "note": "Ship it; follow up on Retry-After."
+  },
+  "createdAt": "2026-11-07T20:30:00Z",
+  "updatedAt": "2026-11-07T21:10:00Z"
+}
